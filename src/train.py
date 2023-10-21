@@ -23,7 +23,7 @@ def main():
     logger = TensorBoardLogger("runs/lightning_logs", name="IDD")
 
     trainer = pl.Trainer(strategy='ddp_find_unused_parameters_true', max_epochs=120, accelerator='gpu',
-                          devices=[3,2], default_root_dir='runs', callbacks=[checkpoint_callback],
+                          devices=[0], default_root_dir='runs', callbacks=[checkpoint_callback],
                           logger=logger, log_every_n_steps=54)
     trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=valid_dl)
 
