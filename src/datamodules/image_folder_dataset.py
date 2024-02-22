@@ -84,31 +84,30 @@ if __name__ == '__main__':
     
     class ResizeWithPadding:
         def __call__(self, image, target_size=(224,224)):
-
+    
             image = np.array(image)
             h, w = image.shape[:2]
             target_w, target_h = target_size
             aspect_ratio = w / h
             target_aspect_ratio = target_w / target_h
-
+    
             if aspect_ratio > target_aspect_ratio:
                 new_w = target_w
                 new_h = int(new_w / aspect_ratio)
             else:
                 new_h = target_h
                 new_w = int(new_h * aspect_ratio)
-
-            resized_img = cv2.resize(image, (new_w, new_h))
-
-            pad_w = (target_w - new_w) // 2
-            pad_h = (target_h - new_h) // 2
-
-            padded_img = np.pad(resized_img, ((pad_h, pad_h), (pad_w, pad_w), (0, 0)), mode='constant')
-            padded_img = Image.fromarray(np.uint8(padded_img)).convert('RGB')
-
-            return padded_img
-
     
+            resized_img = cv2.resize(image, (new_w, new_h))
+    
+            pad_w = (target_w - new_w) 
+            pad_h = (target_h - new_h)
+    
+            padded_img = np.pad(resized_img, ((0, pad_h), (0, pad_w), (0, 0)), mode='constant')
+            padded_img = Image.fromarray(np.uint8(padded_img)).convert('RGB')
+    
+            return padded_img
+        
     # Test with ResNet preprocessing + padded image with maintained aspect ratio
     from torchvision import transforms
     transform = transforms.Compose([
