@@ -36,12 +36,15 @@ class ImageFolderClassification(Dataset):
         image = self.dummy
         try:
             image = self.preprocess(Image.open(image_path))
-        except PIL.UnidentifiedImageError:
+        except PIL.UnidentifiedImageError as e:
             is_error = True
-        except OSError:
+            print(e)
+        except OSError as e:
             is_error = True
-        except BaseException:
+            print(e)
+        except BaseException as e:
             is_error = True
+            print(e)
         if is_error:
             return image, "ERROR", os.path.basename(image_path), label
         return image, 'YES', os.path.basename(image_path), label
@@ -72,3 +75,58 @@ if __name__ == '__main__':
             transforms.ToPILImage()
         ])
     reverse_transform(img).save('hehe.jpg')
+    
+
+
+    # Creates a dataset with padded images while maintaining aspect ratio, and reverses the transformation for output
+    import cv2
+    import numpy as np
+    
+    class ResizeWithPadding:
+        def __call__(self, image, target_size=(224,224)):
+
+            image = np.array(image)
+            h, w = image.shape[:2]
+            target_w, target_h = target_size
+            aspect_ratio = w / h
+            target_aspect_ratio = target_w / target_h
+
+            if aspect_ratio > target_aspect_ratio:
+                new_w = target_w
+                new_h = int(new_w / aspect_ratio)
+            else:
+                new_h = target_h
+                new_w = int(new_h * aspect_ratio)
+
+            resized_img = cv2.resize(image, (new_w, new_h))
+
+            pad_w = (target_w - new_w) // 2
+            pad_h = (target_h - new_h) // 2
+
+            padded_img = np.pad(resized_img, ((pad_h, pad_h), (pad_w, pad_w), (0, 0)), mode='constant')
+            padded_img = Image.fromarray(np.uint8(padded_img)).convert('RGB')
+
+            return padded_img
+
+    
+    # Test with ResNet preprocessing + padded image with maintained aspect ratio
+    from torchvision import transforms
+    transform = transforms.Compose([
+            ResizeWithPadding(),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(20),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            
+        ])
+    ds = ImageFolderClassification('data/output', preprocess=transform)
+    img = ds[0][0]
+    
+    # Reverse ResNet preprocessing and save image for dataset and augmentation visualization
+    reverse_transform = transforms.Compose([
+            transforms.Normalize(mean=[-0.485/0.229, -0.456/0.224, -0.406/0.225], std=[1/0.229, 1/0.224, 1/0.225]),
+            transforms.Lambda(lambda x: x.clamp(0, 1)),  # Clamp to ensure valid pixel values
+            transforms.ToPILImage()
+        ])
+    reverse_transform(img).save('hehe_aspect.jpg')
+
